@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
 using ZombieGame.AI;
@@ -6,6 +6,7 @@ using ZombieGame.AI;
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(ZombieStates))]
+[RequireComponent(typeof(Health))]
 public class Zombie : MonoBehaviour
 {
     [Header("Target")]
@@ -33,24 +34,54 @@ public class Zombie : MonoBehaviour
     private float nextRepathTime;
     private bool hasDestination;
     private Collider[] targetColliders;
+    private float stunEndTime;
+    private Vector3 knockbackDirection;
+    private float knockbackStartSpeed;
+    private float knockbackDuration;
+    private float knockbackElapsed;
 
     private static readonly int IsRunHash = Animator.StringToHash("IsRun");
+    private static readonly int IsStunnedHash =
+        Animator.StringToHash("IsStunned");
+    private static readonly int IdleStateHash =
+        Animator.StringToHash("Base Layer.Idle");
 
     protected NavMeshAgent Agent { get; private set; }
     protected Animator AnimatorComponent { get; private set; }
+    public Health HealthComponent { get; private set; }
 
-    public bool IsDead => fsm.CurrentState == states.Death;
+    public bool IsDead =>fsm != null && ReferenceEquals(fsm.CurrentState, states.Death);
+    public bool IsStunned => Time.time < stunEndTime;
+    protected bool IsKnockedBack =>
+        fsm != null && ReferenceEquals(fsm.CurrentState, states.Knockback);
+    protected bool IsCrowdControlled => IsStunned || IsKnockedBack;
 
     protected virtual void Awake()
     {
         Agent = GetComponent<NavMeshAgent>();
         AnimatorComponent = GetComponent<Animator>();
         states = GetComponent<ZombieStates>();
+        HealthComponent = GetComponent<Health>();
+
+        if (HealthComponent == null)
+        {
+            HealthComponent = gameObject.AddComponent<Health>();
+        }
+
+        HealthComponent.Died += Die;
 
         Agent.updateRotation = false;
 
         fsm = new FSM();
         states.Initialize(this);
+    }
+
+    protected virtual void OnDestroy()
+    {
+        if (HealthComponent != null)
+        {
+            HealthComponent.Died -= Die;
+        }
     }
 
     protected virtual void Start()
@@ -78,11 +109,53 @@ public class Zombie : MonoBehaviour
 
     public void Die()
     {
+        if (IsDead)
+        {
+            return;
+        }
+
         fsm.ChangeState(states.Death);
+    }
+
+    public void ApplyStun(float duration)
+    {
+        if (IsDead || duration <= 0f)
+        {
+            return;
+        }
+
+        stunEndTime = Mathf.Max(stunEndTime, Time.time + duration);
+
+        if (!ReferenceEquals(fsm.CurrentState, states.Knockback))
+        {
+            fsm.ChangeState(states.Stunned);
+        }
+    }
+
+    public void ApplyKnockback(
+        Vector3 direction,
+        float startSpeed,
+        float duration)
+    {
+        if (IsDead ||
+            direction.sqrMagnitude <= 0.001f ||
+            startSpeed <= 0f ||
+            duration <= 0f)
+        {
+            return;
+        }
+
+        direction.y = 0f;
+        knockbackDirection = direction.normalized;
+        knockbackStartSpeed = startSpeed;
+        knockbackDuration = duration;
+        knockbackElapsed = 0f;
+        fsm.ChangeState(states.Knockback);
     }
 
     internal void EnterPursuitMode(ZombiePursuitMode mode)
     {
+        SetStunnedAnimation(false);
         UpdatePursuit(mode);
     }
 
@@ -112,6 +185,70 @@ public class Zombie : MonoBehaviour
         OnDeath();
     }
 
+    internal void EnterStunned()
+    {
+        StopAndClearPath();
+        SetMovingAnimation(false);
+        SetStunnedAnimation(true);
+    }
+
+    internal void TickStunned()
+    {
+        if (IsStunned)
+        {
+            SetMovingAnimation(false);
+            SetStunnedAnimation(true);
+            return;
+        }
+
+        fsm.ChangeState(states.Chase);
+    }
+
+    internal void EnterKnockback()
+    {
+        StopAndClearPath();
+        SetMovingAnimation(false);
+        SetStunnedAnimation(true);
+    }
+
+    internal void TickKnockback()
+    {
+        SetMovingAnimation(false);
+        SetStunnedAnimation(true);
+
+        knockbackElapsed += Time.deltaTime;
+        float progress = Mathf.Clamp01(knockbackElapsed / knockbackDuration);
+        float speed = knockbackStartSpeed * (1f - progress);
+
+        Vector3 displacement =
+            knockbackDirection * speed * Time.deltaTime;
+
+        if (Agent.isOnNavMesh)
+        {
+            Vector3 desiredPosition = transform.position + displacement;
+
+            if (NavMesh.SamplePosition(
+                    desiredPosition,
+                    out NavMeshHit hit,
+                    Mathf.Max(0.5f, Agent.radius * 2f),
+                    Agent.areaMask))
+            {
+                Agent.Warp(hit.position);
+            }
+        }
+        else
+        {
+            transform.position += displacement;
+        }
+
+        if (progress < 1f)
+        {
+            return;
+        }
+
+        fsm.ChangeState(IsStunned ? states.Stunned : states.Chase);
+    }
+
     protected virtual void OnBeforeStateTick()
     {
     }
@@ -137,6 +274,46 @@ public class Zombie : MonoBehaviour
     protected virtual void SetMovingAnimation(bool isMoving)
     {
         AnimatorComponent.SetBool(IsRunHash, isMoving);
+    }
+
+    protected virtual void SetStunnedAnimation(bool isStunned)
+    {
+        AnimatorComponent.SetBool(IsStunnedHash, isStunned);
+
+        if (isStunned)
+        {
+            PlayControlledIdle(IdleStateHash, "Base Layer.Idle");
+        }
+    }
+
+    protected void PlayControlledIdle(int stateHash, string statePath)
+    {
+        if (!AnimatorComponent.HasState(0, stateHash))
+        {
+            Debug.LogWarning(
+                $"{name}: Animator state '{statePath}' was not found.",
+                this);
+            return;
+        }
+
+        AnimatorStateInfo currentState =
+            AnimatorComponent.GetCurrentAnimatorStateInfo(0);
+
+        if (currentState.fullPathHash == stateHash)
+        {
+            return;
+        }
+
+        AnimatorComponent.speed = 1f;
+        AnimatorComponent.Play(stateHash, 0, 0f);
+        AnimatorComponent.Update(0f);
+
+        currentState = AnimatorComponent.GetCurrentAnimatorStateInfo(0);
+
+        Debug.Log(
+            $"{name}: crowd-control animation -> {statePath}, " +
+            $"entered={currentState.fullPathHash == stateHash}",
+            this);
     }
 
     protected virtual void UpdateAnimation()

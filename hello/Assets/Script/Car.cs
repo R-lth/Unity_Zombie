@@ -1,60 +1,39 @@
 ﻿using UnityEngine;
-using UnityEngine.SocialPlatforms;
-using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(PlayerInputComponent))]
+[RequireComponent(typeof(Health))]
 public class Car : MonoBehaviour
 {
-    [SerializeField]
-    float moveSpeed = 2f;
-    [SerializeField]
-    float rotateSpeed = 2f;
-    [SerializeField] 
-    GameObject inventoryUI;
+    [SerializeField] private float moveSpeed = 2f;
+    [SerializeField] private float rotateSpeed = 2f;
 
-    Rigidbody rb;
-    float turn = 0f;
-    Vector3 keyboardMove = Vector3.zero;
-    Vector2 mouseDelta = Vector2.zero;
-    bool isInventoryOpen;
+    private Rigidbody rb;
+    private PlayerInputComponent input;
+    private float turn;
 
-    void Start()
+    private void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        input = GetComponent<PlayerInputComponent>();
         turn = transform.eulerAngles.y;
-
-        gameObject.transform.position = Vector3.zero;
-        gameObject.transform.rotation = Quaternion.identity;
-    }
-
-    private void OnMove(InputValue value)
-    {
-        Vector2 inputVector = value.Get<Vector2>();
-        keyboardMove = new Vector3(inputVector.x, 0f, inputVector.y);
-    }
-
-    private void OnLook(InputValue value)
-    {
-        mouseDelta = value.Get<Vector2>();
-    }
-
-    private void OnInventoryToggle()
-    {
-        isInventoryOpen = !isInventoryOpen;
-        inventoryUI.SetActive(isInventoryOpen);
     }
 
     private void FixedUpdate()
     {
-        // 키보드 WASD
-        if (keyboardMove.sqrMagnitude > 0) { keyboardMove.Normalize(); } // 대각선 움직임 처리
+        Vector2 moveInput = input != null ? input.MoveInput : Vector2.zero;
+        Vector2 lookInput = input != null ? input.LookAt() : Vector2.zero;
+        Vector3 localMove = new Vector3(moveInput.x, 0f, moveInput.y);
 
-        Vector3 move = keyboardMove * Time.fixedDeltaTime * moveSpeed;
-        Vector3 worldMove = rb.rotation * move; // 키보드 입력은 오브젝트의 회전 값이 반영되지 않은 절대적인 월드 기준 방향이기 때문에, 플레이어의 회전 방향에 맞게 월드 방향을 바라보게 해야 함
-        rb.MovePosition(rb.position + worldMove); // rb.MovePosition()는 월드 좌표를 입력 받는 함수
+        if (localMove.sqrMagnitude > 1f)
+        {
+            localMove.Normalize();
+        }
 
-        // 마우스 회전
-        turn += mouseDelta.x * Time.fixedDeltaTime * rotateSpeed; 
-        Quaternion rotate = Quaternion.Euler(0f, turn, 0f); 
-        rb.MoveRotation(rotate);
+        Vector3 worldMove = rb.rotation * localMove;
+        rb.MovePosition(rb.position + worldMove * moveSpeed * Time.fixedDeltaTime);
+
+        turn += lookInput.x * rotateSpeed * Time.fixedDeltaTime;
+        rb.MoveRotation(Quaternion.Euler(0f, turn, 0f));
     }
 }

@@ -13,6 +13,8 @@ public class ZombieStates : MonoBehaviour
     public IState Chase { get; protected set; }
     public IState AdvanceAttack { get; protected set; }
     public IState StationaryAttack { get; protected set; }
+    public IState Stunned { get; protected set; }
+    public IState Knockback { get; protected set; }
     public IState Death { get; protected set; }
 
     public virtual void Initialize(Zombie zombie)
@@ -20,6 +22,8 @@ public class ZombieStates : MonoBehaviour
         Chase = CreateChaseState(zombie);
         AdvanceAttack = CreateAdvanceAttackState(zombie);
         StationaryAttack = CreateStationaryAttackState(zombie);
+        Stunned = CreateStunnedState(zombie);
+        Knockback = CreateKnockbackState(zombie);
         Death = CreateDeathState(zombie);
     }
 
@@ -41,6 +45,16 @@ public class ZombieStates : MonoBehaviour
     protected virtual IState CreateDeathState(Zombie zombie)
     {
         return new DeathState(zombie);
+    }
+
+    protected virtual IState CreateStunnedState(Zombie zombie)
+    {
+        return new StunnedState(zombie);
+    }
+
+    protected virtual IState CreateKnockbackState(Zombie zombie)
+    {
+        return new KnockbackState(zombie);
     }
 
     protected abstract class ZombieState : State
@@ -96,6 +110,46 @@ public class ZombieStates : MonoBehaviour
 
         public StationaryAttackState(Zombie zombie) : base(zombie)
         {
+        }
+    }
+
+    protected class StunnedState : State
+    {
+        private readonly Zombie zombie;
+
+        public StunnedState(Zombie zombie)
+        {
+            this.zombie = zombie;
+        }
+
+        public override void Enter()
+        {
+            zombie.EnterStunned();
+        }
+
+        public override void Tick()
+        {
+            zombie.TickStunned();
+        }
+    }
+
+    protected class KnockbackState : State
+    {
+        private readonly Zombie zombie;
+
+        public KnockbackState(Zombie zombie)
+        {
+            this.zombie = zombie;
+        }
+
+        public override void Enter()
+        {
+            zombie.EnterKnockback();
+        }
+
+        public override void Tick()
+        {
+            zombie.TickKnockback();
         }
     }
 

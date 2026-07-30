@@ -80,6 +80,10 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: c929656c07909194ab8a5cd79f5f371d, type: 2}
+    - target: {fileID: 6936409002000000001, guid: 3a2f5c6aa6efc7246a65c3d45e47d3e5, type: 3}
+      propertyPath: maxHealth
+      value: 500
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 4444702316116753178, guid: 3a2f5c6aa6efc7246a65c3d45e47d3e5, type: 3}
     m_RemovedGameObjects:
@@ -117,6 +121,8 @@ MonoBehaviour:
   moveSpeed: 10
   stationaryAttackRange: 0.8
   attackCooldown: 1.5
+  attackDamage: 20
+  attackDamageRange: 6
 --- !u!114 &4426923939611825717
 MonoBehaviour:
   m_ObjectHideFlags: 0

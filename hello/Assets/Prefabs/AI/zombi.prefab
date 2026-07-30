@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 8141803285501007016}
   - component: {fileID: 4549985982524537363}
   - component: {fileID: 6301474426078273190}
+  - component: {fileID: 6936409002000000001}
   m_Layer: 0
   m_Name: zombi
   m_TagString: Untagged
@@ -64,6 +65,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0a665ac20d8455da5a66723022bd626, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::ZombieStates
+--- !u!114 &6936409002000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 982192645802099483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f791bc109aa486f81d74cdb24bfa98f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Health
+  maxHealth: 50
 --- !u!195 &1226565625782315592
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -203,7 +217,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: Free Pack - Stick Man
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6378207671594616785, guid: 8fba94173e2a97041a18861de4fdcc9c, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:

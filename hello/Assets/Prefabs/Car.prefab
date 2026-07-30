@@ -13,6 +13,9 @@ GameObject:
   - component: {fileID: 6809068487981101310}
   - component: {fileID: 4794581584017639936}
   - component: {fileID: 1270335489008122718}
+  - component: {fileID: 6936409001000000001}
+  - component: {fileID: 6936409001000000002}
+  - component: {fileID: 6936409001000000004}
   m_Layer: 0
   m_Name: Car
   m_TagString: Player
@@ -50,7 +53,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
   moveSpeed: 10
   rotateSpeed: 15
-  inventoryUI: {fileID: 0}
 --- !u!114 &6809068487981101310
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -120,6 +122,65 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b06a24a1f3b41af49a64aac20921f0b7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventoryComponent
+--- !u!114 &6936409001000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472702821343334501}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e4488e848c748329a4d97e0cf87b53f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputComponent
+  skillSystem: {fileID: 6936409001000000002}
+  inventoryUI: {fileID: 0}
+--- !u!114 &6936409001000000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472702821343334501}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0284ebd39ca043a18c0cf71a2fdaaa93, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSkillSystem
+  globalInputLockDuration: 0.05
+  firePoint: {fileID: 0}
+  sphereBulletPrefab: {fileID: 0}
+  bulletCount: 5
+  attackHalfAngle: 30
+  attackRange: 20
+  bulletSpeed: 25
+  attackDamage: 100
+  attackCooldown: 1
+  fallbackBulletScale: 0.3
+  hornRange: 10
+  hornHalfAngle: 45
+  hornKnockbackForce: 8
+  hornKnockbackDuration: 3
+  hornSideSpread: 0.2
+  hornCooldown: 5
+  flashRange: 15
+  flashHalfAngle: 60
+  flashStunDuration: 5
+  flashCooldown: 10
+--- !u!114 &6936409001000000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1472702821343334501}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f791bc109aa486f81d74cdb24bfa98f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Health
+  maxHealth: 100
 --- !u!1001 &8687854536765594989
 PrefabInstance:
   m_ObjectHideFlags: 0
