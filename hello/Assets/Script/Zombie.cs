@@ -13,7 +13,7 @@ public class Zombie : MonoBehaviour
 
     [Header("Movement")]
     [FormerlySerializedAs("moveSpeed")]
-    [SerializeField] protected float chaseSpeed = 5f;
+    [SerializeField] protected float chaseSpeed = 10f;
     [SerializeField] protected float attackMoveSpeed = 1f;
     [SerializeField] protected float turnSpeed = 540f;
 
@@ -118,16 +118,19 @@ public class Zombie : MonoBehaviour
 
     protected virtual void UpdateChase()
     {
+        SetMovingAnimation(true);
         MoveToward(chaseSpeed);
     }
 
     protected virtual void UpdateAdvanceAttack()
     {
+        SetMovingAnimation(false);
         MoveToward(attackMoveSpeed);
     }
 
     protected virtual void UpdateStationaryAttack()
     {
+        SetMovingAnimation(false);
         StopAndFacePlayer();
     }
 
@@ -138,11 +141,6 @@ public class Zombie : MonoBehaviour
 
     protected virtual void UpdateAnimation()
     {
-        bool isMoving = Agent.isOnNavMesh &&
-                        !Agent.isStopped &&
-                        Agent.velocity.sqrMagnitude > 0.01f;
-
-        SetMovingAnimation(isMoving);
     }
 
     protected virtual void OnDeath()

@@ -49,6 +49,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 009d8b35b9bb89b4cb4e1295b6a60334, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Zombie
+  chaseSpeed: 10
+  attackMoveSpeed: 4
   stationaryAttackRange: 0.5
 --- !u!114 &6301474426078273190
 MonoBehaviour:
