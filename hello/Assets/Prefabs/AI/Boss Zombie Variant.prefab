@@ -92,6 +92,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 982192645802099483, guid: 3a2f5c6aa6efc7246a65c3d45e47d3e5, type: 3}
       insertIndex: 1
       addedObject: {fileID: 8749103335503369279}
+    - targetCorrespondingSourceObject: {fileID: 982192645802099483, guid: 3a2f5c6aa6efc7246a65c3d45e47d3e5, type: 3}
+      insertIndex: 2
+      addedObject: {fileID: 4426923939611825717}
   m_SourcePrefab: {fileID: 100100000, guid: 3a2f5c6aa6efc7246a65c3d45e47d3e5, type: 3}
 --- !u!1 &1409728478211012936 stripped
 GameObject:
@@ -114,6 +117,18 @@ MonoBehaviour:
   moveSpeed: 10
   attackRange: 3
   attackCooldown: 1.5
+--- !u!114 &4426923939611825717
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1409728478211012936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d308040b5674634bcb5b401c0a24aeb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossZombieStates
 --- !u!4 &3312536448583167983 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3731603704694478268, guid: 3a2f5c6aa6efc7246a65c3d45e47d3e5, type: 3}

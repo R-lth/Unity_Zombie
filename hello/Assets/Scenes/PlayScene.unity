@@ -40237,7 +40237,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1740269720
 Transform:
   m_ObjectHideFlags: 0
@@ -47703,26 +47703,6 @@ PrefabInstance:
     - target: {fileID: 1409728478211012936, guid: 441aba93f8b9f9549a1a58cea72eb0f2, type: 3}
       propertyPath: m_Name
       value: Boss Zombie
-      objectReference: {fileID: 0}
-    - target: {fileID: 1409728478211012936, guid: 441aba93f8b9f9549a1a58cea72eb0f2, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2384061931186831424, guid: 441aba93f8b9f9549a1a58cea72eb0f2, type: 3}
-      propertyPath: m_UseGravity
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2384061931186831424, guid: 441aba93f8b9f9549a1a58cea72eb0f2, type: 3}
-      propertyPath: m_Interpolate
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2384061931186831424, guid: 441aba93f8b9f9549a1a58cea72eb0f2, type: 3}
-      propertyPath: m_IsKinematic
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2384061931186831424, guid: 441aba93f8b9f9549a1a58cea72eb0f2, type: 3}
-      propertyPath: m_CollisionDetection
-      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3312536448583167983, guid: 441aba93f8b9f9549a1a58cea72eb0f2, type: 3}
       propertyPath: m_LocalPosition.x

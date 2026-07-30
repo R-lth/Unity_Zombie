@@ -1,8 +1,10 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.AI;
+using ZombieGame.AI;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(Animator))]
+[RequireComponent(typeof(BossZombieStates))]
 public class BossZombie : MonoBehaviour
 {
     [Header("Target")]
@@ -17,16 +19,32 @@ public class BossZombie : MonoBehaviour
 
     private NavMeshAgent agent;
     private Animator animator;
-
+    private BossZombieStates states;
+    private FSM fsm;
     private float attackTimer;
 
     private static readonly int SpeedHash = Animator.StringToHash("MoveSpeed");
     private static readonly int AttackHash = Animator.StringToHash("Attack");
 
+    public bool IsDead => fsm.CurrentState == states.Death;
+
+    internal bool HasTarget => playerTransform != null;
+    internal bool IsPlayerInAttackRange =>
+        HasTarget && GetDistanceToPlayer() <= attackRange;
+
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
+        states = GetComponent<BossZombieStates>();
+
+        if (states == null)
+        {
+            states = gameObject.AddComponent<BossZombieStates>();
+        }
+
+        fsm = new FSM();
+        states.Initialize(this);
     }
 
     private void Start()
@@ -42,38 +60,77 @@ public class BossZombie : MonoBehaviour
         }
 
         agent.speed = moveSpeed;
+        ChangeToChaseState();
     }
 
     private void Update()
     {
-        if (playerTransform == null) { return; }
-
         attackTimer += Time.deltaTime;
-
-        float distance = Vector3.Distance(transform.position, playerTransform.position);
-
-        if (distance <= attackRange)
-        {
-            Attack();
-        }
-        else
-        {
-            Chase();
-        }
-
+        fsm.Tick();
         UpdateAnimation();
     }
 
-    private void Chase()
+    public void Die()
+    {
+        fsm.ChangeState(states.Death);
+    }
+
+    internal void ChangeToChaseState()
+    {
+        fsm.ChangeState(states.Chase);
+    }
+
+    internal void ChangeToAttackState()
+    {
+        fsm.ChangeState(states.Attack);
+    }
+
+    internal void StartChasing()
     {
         agent.isStopped = false;
         agent.speed = moveSpeed;
-        agent.SetDestination(playerTransform.position);
     }
 
-    private void Attack()
+    internal void ChasePlayer()
+    {
+        if (playerTransform != null)
+        {
+            agent.SetDestination(playerTransform.position);
+        }
+    }
+
+    internal void StopMoving()
+    {
+        agent.ResetPath();
+    }
+
+    internal void StartAttacking()
     {
         agent.isStopped = true;
+    }
+
+    internal void UpdateAttack()
+    {
+        FacePlayer();
+        TryAttack();
+    }
+
+    private float GetDistanceToPlayer()
+    {
+        if (playerTransform == null)
+        {
+            return float.PositiveInfinity;
+        }
+
+        return Vector3.Distance(transform.position, playerTransform.position);
+    }
+
+    private void FacePlayer()
+    {
+        if (playerTransform == null)
+        {
+            return;
+        }
 
         Vector3 direction = playerTransform.position - transform.position;
         direction.y = 0f;
@@ -81,10 +138,15 @@ public class BossZombie : MonoBehaviour
         if (direction.sqrMagnitude > 0.001f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10f * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                10f * Time.deltaTime);
         }
+    }
 
-        // 공격 쿨타임
+    private void TryAttack()
+    {
         if (attackTimer >= attackCooldown)
         {
             attackTimer = 0f;
@@ -94,8 +156,6 @@ public class BossZombie : MonoBehaviour
 
     private void UpdateAnimation()
     {
-        // Blend Tree 제어
-
         float speed = 0f;
 
         if (!agent.isStopped && agent.speed > 0f)
@@ -104,7 +164,6 @@ public class BossZombie : MonoBehaviour
         }
 
         speed = Mathf.Clamp01(speed);
-
         animator.SetFloat(SpeedHash, speed, 0.1f, Time.deltaTime);
     }
 }
