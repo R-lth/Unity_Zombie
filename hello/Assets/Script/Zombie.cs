@@ -118,19 +118,16 @@ public class Zombie : MonoBehaviour
 
     protected virtual void UpdateChase()
     {
-        SetMovingAnimation(true);
         MoveToward(chaseSpeed);
     }
 
     protected virtual void UpdateAdvanceAttack()
     {
-        SetMovingAnimation(true);
         MoveToward(attackMoveSpeed);
     }
 
     protected virtual void UpdateStationaryAttack()
     {
-        SetMovingAnimation(false);
         StopAndFacePlayer();
     }
 
@@ -141,6 +138,11 @@ public class Zombie : MonoBehaviour
 
     protected virtual void UpdateAnimation()
     {
+        bool isMoving = Agent.isOnNavMesh &&
+                        !Agent.isStopped &&
+                        Agent.velocity.sqrMagnitude > 0.01f;
+
+        SetMovingAnimation(isMoving);
     }
 
     protected virtual void OnDeath()
