@@ -1,3 +1,0 @@
-
-//How to make a RTS Unit Control in Unity!
-https://www.youtube.com/watch?v=vxCMOPCYeM0
