@@ -1,90 +1,44 @@
-using UnityEngine;
 using ZombieGame.AI;
 
-public class BossZombieStates : MonoBehaviour
+public class BossZombieStates : ZombieStates
 {
-    public IState Chase { get; private set; }
-    public IState Attack { get; private set; }
-    public IState Death { get; private set; }
-
-    public void Initialize(BossZombie bossZombie)
+    protected override IState CreateAdvanceAttackState(Zombie zombie)
     {
-        Chase = new ChaseState(bossZombie);
-        Attack = new AttackState(bossZombie);
-        Death = new DeathState(bossZombie);
+        return new BossAdvanceAttackState((BossZombie)zombie);
     }
 
-    private abstract class BossState : State
+    protected override IState CreateStationaryAttackState(Zombie zombie)
     {
-        protected readonly BossZombie Boss;
-
-        protected BossState(BossZombie bossZombie)
-        {
-            Boss = bossZombie;
-        }
+        return new BossStationaryAttackState((BossZombie)zombie);
     }
 
-    private sealed class ChaseState : BossState
+    private sealed class BossAdvanceAttackState : AdvanceAttackState
     {
-        public ChaseState(BossZombie bossZombie) : base(bossZombie)
+        private readonly BossZombie boss;
+
+        public BossAdvanceAttackState(BossZombie boss) : base(boss)
         {
+            this.boss = boss;
         }
 
-        public override void Enter()
+        protected override void OnAfterTick()
         {
-            Boss.StartChasing();
-        }
-
-        public override void Tick()
-        {
-            if (!Boss.HasTarget)
-            {
-                return;
-            }
-
-            if (Boss.IsPlayerInAttackRange)
-            {
-                Boss.ChangeToAttackState();
-                return;
-            }
-
-            Boss.ChasePlayer();
-        }
-
-        public override void Exit()
-        {
-            Boss.StopMoving();
+            boss.TryAttack();
         }
     }
 
-    private sealed class AttackState : BossState
+    private sealed class BossStationaryAttackState : StationaryAttackState
     {
-        public AttackState(BossZombie bossZombie) : base(bossZombie)
+        private readonly BossZombie boss;
+
+        public BossStationaryAttackState(BossZombie boss) : base(boss)
         {
+            this.boss = boss;
         }
 
-        public override void Enter()
+        protected override void OnAfterTick()
         {
-            Boss.StartAttacking();
-        }
-
-        public override void Tick()
-        {
-            if (!Boss.IsPlayerInAttackRange)
-            {
-                Boss.ChangeToChaseState();
-                return;
-            }
-
-            Boss.UpdateAttack();
-        }
-    }
-
-    // 사망 상태의 동작은 추후 구현합니다.
-    private sealed class DeathState : BossState
-    {
-        public DeathState(BossZombie bossZombie) : base(bossZombie)
-        {
+            boss.TryAttack();
         }
     }
 }
