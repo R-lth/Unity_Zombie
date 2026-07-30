@@ -32,6 +32,7 @@ public class Zombie : MonoBehaviour
     private Vector3 lastDestination;
     private float nextRepathTime;
     private bool hasDestination;
+    private Collider[] targetColliders;
 
     private static readonly int IsRunHash = Animator.StringToHash("IsRun");
 
@@ -64,6 +65,7 @@ public class Zombie : MonoBehaviour
             }
         }
 
+        CacheTargetColliders();
         fsm.ChangeState(states.Chase);
     }
 
@@ -117,13 +119,13 @@ public class Zombie : MonoBehaviour
     protected virtual void UpdateChase()
     {
         SetMovingAnimation(true);
-        MoveToward(chaseSpeed, false);
+        MoveToward(chaseSpeed);
     }
 
     protected virtual void UpdateAdvanceAttack()
     {
         SetMovingAnimation(true);
-        MoveToward(attackMoveSpeed, true);
+        MoveToward(attackMoveSpeed);
     }
 
     protected virtual void UpdateStationaryAttack()
@@ -172,29 +174,31 @@ public class Zombie : MonoBehaviour
     {
         RefreshPath();
 
-        float distance = GetTravelDistance();
+        float surfaceDistance = GetDistanceToTargetSurface();
         float stationaryExitRange = stationaryAttackRange + rangeHysteresis;
         float advanceRange = Mathf.Max(stationaryAttackRange, advanceAttackRange);
         float advanceExitRange = advanceRange + rangeHysteresis;
 
         if (currentMode == ZombiePursuitMode.StationaryAttack &&
-            distance <= stationaryExitRange)
+            surfaceDistance <= stationaryExitRange)
         {
             return ZombiePursuitMode.StationaryAttack;
         }
 
-        if (distance <= stationaryAttackRange)
+        if (surfaceDistance <= stationaryAttackRange)
         {
             return ZombiePursuitMode.StationaryAttack;
         }
+
+        float pathDistance = GetTravelDistance();
 
         if (currentMode == ZombiePursuitMode.AdvanceAttack &&
-            distance <= advanceExitRange)
+            pathDistance <= advanceExitRange)
         {
             return ZombiePursuitMode.AdvanceAttack;
         }
 
-        return distance <= advanceRange
+        return pathDistance <= advanceRange
             ? ZombiePursuitMode.AdvanceAttack
             : ZombiePursuitMode.Chase;
     }
@@ -212,7 +216,7 @@ public class Zombie : MonoBehaviour
         }
     }
 
-    private void MoveToward(float speed, bool facePlayer)
+    private void MoveToward(float speed)
     {
         RefreshPath();
 
@@ -222,11 +226,7 @@ public class Zombie : MonoBehaviour
             Agent.speed = speed;
         }
 
-        Vector3 facingDirection = facePlayer
-            ? GetDirectionToPlayer()
-            : GetMovementDirection();
-
-        RotateTowards(facingDirection);
+        RotateTowards(GetDirectionToPlayer());
     }
 
     private void StopAndFacePlayer()
@@ -298,14 +298,43 @@ public class Zombie : MonoBehaviour
         return GetDirectionToPlayer().magnitude;
     }
 
-    private Vector3 GetMovementDirection()
+    private void CacheTargetColliders()
     {
-        Vector3 direction = Agent.desiredVelocity;
-        direction.y = 0f;
+        targetColliders = playerTransform != null
+            ? playerTransform.GetComponentsInChildren<Collider>()
+            : null;
+    }
 
-        return direction.sqrMagnitude > 0.001f
-            ? direction
-            : GetDirectionToPlayer();
+    private float GetDistanceToTargetSurface()
+    {
+        if (targetColliders == null || targetColliders.Length == 0)
+        {
+            return GetDirectionToPlayer().magnitude;
+        }
+
+        Vector3 zombiePosition = transform.position;
+        float nearestDistanceSqr = float.PositiveInfinity;
+
+        foreach (Collider targetCollider in targetColliders)
+        {
+            if (targetCollider == null ||
+                !targetCollider.enabled ||
+                targetCollider.isTrigger)
+            {
+                continue;
+            }
+
+            Vector3 closestPoint = targetCollider.ClosestPoint(zombiePosition);
+            closestPoint.y = zombiePosition.y;
+
+            float distanceSqr =
+                (closestPoint - zombiePosition).sqrMagnitude;
+            nearestDistanceSqr = Mathf.Min(nearestDistanceSqr, distanceSqr);
+        }
+
+        return float.IsPositiveInfinity(nearestDistanceSqr)
+            ? GetDirectionToPlayer().magnitude
+            : Mathf.Sqrt(nearestDistanceSqr);
     }
 
     private Vector3 GetDirectionToPlayer()

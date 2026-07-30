@@ -115,7 +115,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BossZombie
   playerTransform: {fileID: 0}
   moveSpeed: 10
-  attackRange: 3
+  stationaryAttackRange: 0.8
   attackCooldown: 1.5
 --- !u!114 &4426923939611825717
 MonoBehaviour:
