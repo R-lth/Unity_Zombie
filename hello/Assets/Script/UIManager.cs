@@ -55,6 +55,7 @@ public class UIManager : MonoBehaviour
 
         FindAndBindPlayerStatus();
         PrepareStatusUI();
+        PrepareGameFlowUI();
         SubscribeStatusEvents();
         RefreshInitialStatus();
     }
@@ -147,6 +148,21 @@ public class UIManager : MonoBehaviour
             flashSkillSlot = FindSkillSlot("Skill 3 Flash");
         }
 
+    }
+
+    private void PrepareGameFlowUI()
+    {
+        Canvas canvas = GetComponent<Canvas>();
+
+        if (canvas == null)
+        {
+            canvas = GetComponentInParent<Canvas>();
+        }
+
+        if (canvas != null && canvas.GetComponent<GameFlowUI>() == null)
+        {
+            canvas.gameObject.AddComponent<GameFlowUI>();
+        }
     }
 
     private SkillSlotUI FindSkillSlot(string objectName)

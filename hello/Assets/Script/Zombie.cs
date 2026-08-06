@@ -73,6 +73,10 @@ public class Zombie : MonoBehaviour, IPoolable
             HealthComponent = gameObject.AddComponent<Health>();
         }
 
+        CharacterEntity.Ensure(
+            gameObject,
+            this is BossZombie ? CharacterRole.Boss : CharacterRole.Enemy);
+
         HealthComponent.Died += Die;
 
         Agent.updateRotation = false;
@@ -352,6 +356,7 @@ public class Zombie : MonoBehaviour, IPoolable
         AnimatorComponent.Rebind();
         AnimatorComponent.Update(0f);
         fsm.ChangeState(states.Chase);
+
     }
 
     public virtual void OnPoolDespawned()

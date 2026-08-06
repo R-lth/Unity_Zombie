@@ -8,8 +8,12 @@ public class MobSpawn : MonoBehaviour
     [SerializeField] private PoolId[] monsterPoolIds;
     [SerializeField, Min(0)] private int initialPoolSize = 10;
     [SerializeField, Min(1)] private int maxPoolSize = 64;
+    [SerializeField, Min(0f)] private float bossSpawnDelay = 30f;
 
-    private readonly List<PoolId> spawnPoolIds = new();
+    private readonly List<PoolId> normalSpawnPoolIds = new();
+    private PoolId bossPoolId = PoolId.None;
+    private bool bossSpawned;
+    private float bossTimer;
     GameObject Player;
     float timer = 0f;
 
@@ -43,19 +47,41 @@ public class MobSpawn : MonoBehaviour
                     initialPoolSize,
                     maxPoolSize))
             {
-                spawnPoolIds.Add(poolId);
+                if (zombiePrefab is BossZombie)
+                {
+                    bossPoolId = poolId;
+                }
+                else if (!normalSpawnPoolIds.Contains(poolId))
+                {
+                    normalSpawnPoolIds.Add(poolId);
+                }
             }
         }
     }
 
     void Update()
     {
+        if (GameManager.Instance.State != GameState.Playing)
+        {
+            return;
+        }
+
         timer += Time.deltaTime;
+        bossTimer += Time.deltaTime;
 
         if (timer > 3f)
         {
-            if (Player == null || spawnPoolIds.Count == 0)
+            if (Player == null)
             {
+                return;
+            }
+
+
+            PoolId poolId = SelectNextPool();
+
+            if (poolId == PoolId.None)
+            {
+                timer = 0f;
                 return;
             }
 
@@ -64,7 +90,6 @@ public class MobSpawn : MonoBehaviour
             toPlayer.y = 0f;
             Quaternion look = Quaternion.LookRotation(toPlayer);
 
-            PoolId poolId = spawnPoolIds[Random.Range(0, spawnPoolIds.Count)];
             PoolManager.Instance.Rent<Zombie>(poolId, finalSpawnPos, look);
 
             timer = 0f;
@@ -108,6 +133,24 @@ public class MobSpawn : MonoBehaviour
         }
 
         return Vector3.zero;
+    }
+
+    private PoolId SelectNextPool()
+    {
+        if (!bossSpawned &&
+            bossPoolId != PoolId.None &&
+            bossTimer >= bossSpawnDelay)
+        {
+            bossSpawned = true;
+            return bossPoolId;
+        }
+
+        if (normalSpawnPoolIds.Count == 0)
+        {
+            return PoolId.None;
+        }
+
+        return normalSpawnPoolIds[Random.Range(0, normalSpawnPoolIds.Count)];
     }
 
     private PoolId ResolvePoolId(int index, Zombie zombiePrefab)

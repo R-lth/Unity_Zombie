@@ -14,6 +14,7 @@ public class Car : MonoBehaviour
 
     private void Awake()
     {
+        CharacterEntity.Ensure(gameObject, CharacterRole.Player);
         rb = GetComponent<Rigidbody>();
         input = GetComponent<PlayerInputComponent>();
         turn = transform.eulerAngles.y;

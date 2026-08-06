@@ -41033,9 +41033,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MobSpawn
   monsters:
   - {fileID: 982192645802099483, guid: 3a2f5c6aa6efc7246a65c3d45e47d3e5, type: 3}
+  - {fileID: 1409728478211012936, guid: 441aba93f8b9f9549a1a58cea72eb0f2, type: 3}
   monsterPoolIds: 
   initialPoolSize: 10
   maxPoolSize: 64
+  bossSpawnDelay: 30
 --- !u!1 &1742547407
 GameObject:
   m_ObjectHideFlags: 0
