@@ -1,17 +1,51 @@
 ﻿using UnityEngine;
 using UnityEngine.AI; // NavMesh 기능을 사용하기 위해 반드시 필요합니다.
+using System.Collections.Generic;
 
 public class MobSpawn : MonoBehaviour
 {
-    [SerializeField]
-    GameObject[] monsters;    // 좀비 프리팹 배열
+    [SerializeField] private GameObject[] monsters;
+    [SerializeField] private PoolId[] monsterPoolIds;
+    [SerializeField, Min(0)] private int initialPoolSize = 10;
+    [SerializeField, Min(1)] private int maxPoolSize = 64;
 
+    private readonly List<PoolId> spawnPoolIds = new();
     GameObject Player;
     float timer = 0f;
 
     void Start() 
     {
         Player = GameObject.FindWithTag("Player");
+
+        if (monsters == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < monsters.Length; i++)
+        {
+            GameObject monster = monsters[i];
+            Zombie zombiePrefab = monster != null
+                ? monster.GetComponent<Zombie>()
+                : null;
+
+            if (zombiePrefab == null)
+            {
+                Debug.LogError("Monster prefab requires a Zombie component.", this);
+                continue;
+            }
+
+            PoolId poolId = ResolvePoolId(i, zombiePrefab);
+
+            if (PoolManager.Instance.Register(
+                    poolId,
+                    zombiePrefab,
+                    initialPoolSize,
+                    maxPoolSize))
+            {
+                spawnPoolIds.Add(poolId);
+            }
+        }
     }
 
     void Update()
@@ -20,13 +54,18 @@ public class MobSpawn : MonoBehaviour
 
         if (timer > 3f)
         {
-            System.Random random = new System.Random();
+            if (Player == null || spawnPoolIds.Count == 0)
+            {
+                return;
+            }
+
             Vector3 finalSpawnPos = GetRandomNavMeshPosition();
             Vector3 toPlayer = Player.transform.position - finalSpawnPos; 
             toPlayer.y = 0f;
             Quaternion look = Quaternion.LookRotation(toPlayer);
 
-            Instantiate(monsters[random.Next(0, monsters.Length)], finalSpawnPos, look);
+            PoolId poolId = spawnPoolIds[Random.Range(0, spawnPoolIds.Count)];
+            PoolManager.Instance.Rent<Zombie>(poolId, finalSpawnPos, look);
 
             timer = 0f;
         }
@@ -71,6 +110,19 @@ public class MobSpawn : MonoBehaviour
         return Vector3.zero;
     }
 
+    private PoolId ResolvePoolId(int index, Zombie zombiePrefab)
+    {
+        if (monsterPoolIds != null &&
+            index < monsterPoolIds.Length &&
+            monsterPoolIds[index] != PoolId.None)
+        {
+            return monsterPoolIds[index];
+        }
+
+        return zombiePrefab is BossZombie
+            ? PoolId.BossZombie
+            : PoolId.NormalZombie;
+    }
 }
 
 

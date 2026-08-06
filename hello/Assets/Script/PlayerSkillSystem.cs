@@ -45,6 +45,7 @@ public class PlayerSkillSystem : MonoBehaviour
     private float flashReadyTime;
     private float nextSkillInputTime;
     private int lastSkillUseFrame = -1;
+    private SphereBullet fallbackBulletPrefab;
 
     public event Action<SkillId, float, float> CooldownChanged;
 
@@ -198,32 +199,20 @@ public class PlayerSkillSystem : MonoBehaviour
 
     private void SpawnSphereBullet(Vector3 direction)
     {
+        if (!EnsureBulletPool())
+        {
+            return;
+        }
+
         Vector3 spawnPosition = GetFirePosition();
-        GameObject bulletObject;
-
-        if (sphereBulletPrefab != null)
-        {
-            bulletObject = Instantiate(
-                sphereBulletPrefab,
-                spawnPosition,
-                Quaternion.LookRotation(direction));
-        }
-        else
-        {
-            bulletObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            bulletObject.name = "Sphere Bullet";
-            bulletObject.transform.SetPositionAndRotation(
-                spawnPosition,
-                Quaternion.LookRotation(direction));
-            bulletObject.transform.localScale =
-                Vector3.one * fallbackBulletScale;
-        }
-
-        SphereBullet bullet = bulletObject.GetComponent<SphereBullet>();
+        SphereBullet bullet = PoolManager.Instance.Rent<SphereBullet>(
+            PoolId.PlayerBullet,
+            spawnPosition,
+            Quaternion.LookRotation(direction));
 
         if (bullet == null)
         {
-            bullet = bulletObject.AddComponent<SphereBullet>();
+            return;
         }
 
         bullet.Initialize(
@@ -231,6 +220,58 @@ public class PlayerSkillSystem : MonoBehaviour
             direction,
             bulletSpeed,
             attackRange);
+    }
+
+    private bool EnsureBulletPool()
+    {
+        PoolManager manager = PoolManager.Instance;
+
+        if (manager.IsRegistered(PoolId.PlayerBullet))
+        {
+            return true;
+        }
+
+        SphereBullet bulletPrefab = sphereBulletPrefab != null
+            ? sphereBulletPrefab.GetComponent<SphereBullet>()
+            : null;
+
+        if (bulletPrefab == null)
+        {
+            if (sphereBulletPrefab != null)
+            {
+                Debug.LogWarning(
+                    "The bullet prefab requires a SphereBullet component. " +
+                    "Using the runtime fallback bullet instead.",
+                    this);
+            }
+
+            bulletPrefab = EnsureFallbackBulletPrefab();
+        }
+
+        int initialSize = Mathf.Max(1, bulletCount);
+        return manager.Register(
+            PoolId.PlayerBullet,
+            bulletPrefab,
+            initialSize,
+            initialSize * 4);
+    }
+
+    private SphereBullet EnsureFallbackBulletPrefab()
+    {
+        if (fallbackBulletPrefab != null)
+        {
+            return fallbackBulletPrefab;
+        }
+
+        GameObject fallbackObject =
+            GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        fallbackObject.name = "Runtime Sphere Bullet Prefab";
+        fallbackObject.transform.localScale =
+            Vector3.one * fallbackBulletScale;
+        fallbackObject.AddComponent<Rigidbody>();
+        fallbackBulletPrefab = fallbackObject.AddComponent<SphereBullet>();
+        fallbackObject.SetActive(false);
+        return fallbackBulletPrefab;
     }
 
     private Vector3 GetFirePosition()

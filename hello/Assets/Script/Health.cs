@@ -17,6 +17,12 @@ public class Health : MonoBehaviour
         CurrentHealth = maxHealth;
     }
 
+    public void ResetToFull()
+    {
+        CurrentHealth = maxHealth;
+        HealthChanged?.Invoke(CurrentHealth, maxHealth);
+    }
+
     public void TakeDamage(float damage)
     {
         if (IsDead || damage <= 0f)

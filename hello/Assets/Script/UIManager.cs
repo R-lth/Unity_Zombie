@@ -78,7 +78,7 @@ public class UIManager : MonoBehaviour
         {
             if (playerInventory != null && playerInventory.AddItem(item.myItem))
             {
-                Destroy(item.gameObject);
+                item.Collect();
             }
         };
 

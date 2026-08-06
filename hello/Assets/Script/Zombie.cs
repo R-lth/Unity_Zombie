@@ -2,12 +2,13 @@
 using UnityEngine.AI;
 using UnityEngine.Serialization;
 using ZombieGame.AI;
+using System.Collections;
 
 [RequireComponent(typeof(NavMeshAgent))]
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(ZombieStates))]
 [RequireComponent(typeof(Health))]
-public class Zombie : MonoBehaviour
+public class Zombie : MonoBehaviour, IPoolable
 {
     [Header("Target")]
     [SerializeField] protected Transform playerTransform;
@@ -28,6 +29,9 @@ public class Zombie : MonoBehaviour
     [SerializeField] protected float repathInterval = 0.15f;
     [SerializeField] protected float repathDistance = 0.25f;
 
+    [Header("Pooling")]
+    [SerializeField, Min(0f)] private float returnToPoolDelay = 1.5f;
+
     private ZombieStates states;
     private FSM fsm;
     private Vector3 lastDestination;
@@ -39,6 +43,7 @@ public class Zombie : MonoBehaviour
     private float knockbackStartSpeed;
     private float knockbackDuration;
     private float knockbackElapsed;
+    private Coroutine returnRoutine;
 
     private static readonly int IsRunHash = Animator.StringToHash("IsRun");
     private static readonly int IsStunnedHash =
@@ -183,6 +188,13 @@ public class Zombie : MonoBehaviour
         StopAndClearPath();
         SetMovingAnimation(false);
         OnDeath();
+
+        if (returnRoutine != null)
+        {
+            StopCoroutine(returnRoutine);
+        }
+
+        returnRoutine = StartCoroutine(ReturnToPoolAfterDelay());
     }
 
     internal void EnterStunned()
@@ -322,6 +334,46 @@ public class Zombie : MonoBehaviour
 
     protected virtual void OnDeath()
     {
+    }
+
+    public virtual void OnPoolSpawned()
+    {
+        if (returnRoutine != null)
+        {
+            StopCoroutine(returnRoutine);
+            returnRoutine = null;
+        }
+
+        stunEndTime = 0f;
+        knockbackElapsed = 0f;
+        nextRepathTime = 0f;
+        hasDestination = false;
+        HealthComponent.ResetToFull();
+        AnimatorComponent.Rebind();
+        AnimatorComponent.Update(0f);
+        fsm.ChangeState(states.Chase);
+    }
+
+    public virtual void OnPoolDespawned()
+    {
+        if (returnRoutine != null)
+        {
+            StopCoroutine(returnRoutine);
+            returnRoutine = null;
+        }
+
+        StopAndClearPath();
+    }
+
+    private IEnumerator ReturnToPoolAfterDelay()
+    {
+        if (returnToPoolDelay > 0f)
+        {
+            yield return new WaitForSeconds(returnToPoolDelay);
+        }
+
+        returnRoutine = null;
+        PoolManager.Instance.Return(this);
     }
 
     private void UpdatePursuit(ZombiePursuitMode mode)

@@ -15,6 +15,12 @@ public class BossZombie : Zombie
     private static readonly int AttackHash = Animator.StringToHash("Attack");
     private static readonly int IdleStateHash = Animator.StringToHash("Base.Walk");
 
+    public override void OnPoolSpawned()
+    {
+        attackTimer = 0f;
+        base.OnPoolSpawned();
+    }
+
     protected override void Start()
     {
         base.Start();

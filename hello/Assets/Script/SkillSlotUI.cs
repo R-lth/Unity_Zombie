@@ -18,7 +18,7 @@ public class SkillSlotUI : MonoBehaviour
         if (cooldownText != null)
         {
             cooldownText.text =
-                remaining > 0f
+                remaining > 0f?
                     $"{skillLabel}\n{Mathf.CeilToInt(remaining)}"
                     : skillLabel;
         }

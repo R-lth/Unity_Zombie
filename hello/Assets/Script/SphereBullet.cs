@@ -2,7 +2,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(SphereCollider))]
 [RequireComponent(typeof(Rigidbody))]
-public class SphereBullet : MonoBehaviour
+public class SphereBullet : MonoBehaviour, IPoolable
 {
     private Vector3 direction;
     private Vector3 startPosition;
@@ -12,6 +12,8 @@ public class SphereBullet : MonoBehaviour
     private Rigidbody body;
     private Transform ownerTransform;
     private float castRadius;
+    private SphereCollider bulletCollider;
+    private Collider[] ignoredOwnerColliders;
 
     public void Initialize(
         GameObject owner,
@@ -26,20 +28,21 @@ public class SphereBullet : MonoBehaviour
         startPosition = transform.position;
         initialized = true;
 
-        SphereCollider sphereCollider = GetComponent<SphereCollider>();
-        sphereCollider.isTrigger = true;
-        castRadius = Mathf.Max(0.01f, sphereCollider.bounds.extents.x);
+        RestoreOwnerCollisions();
+        bulletCollider = GetComponent<SphereCollider>();
+        bulletCollider.isTrigger = true;
+        castRadius = Mathf.Max(0.01f, bulletCollider.bounds.extents.x);
 
         body = GetComponent<Rigidbody>();
         body.useGravity = false;
         body.isKinematic = true;
         body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
-        Collider[] ownerColliders = owner.GetComponentsInChildren<Collider>();
+        ignoredOwnerColliders = owner.GetComponentsInChildren<Collider>();
 
-        foreach (Collider ownerCollider in ownerColliders)
+        foreach (Collider ownerCollider in ignoredOwnerColliders)
         {
-            Physics.IgnoreCollision(sphereCollider, ownerCollider);
+            Physics.IgnoreCollision(bulletCollider, ownerCollider);
         }
     }
 
@@ -99,7 +102,7 @@ public class SphereBullet : MonoBehaviour
             maxDistance * maxDistance)
         {
             initialized = false;
-            Destroy(gameObject);
+            PoolManager.Instance.Return(this);
         }
     }
 
@@ -128,7 +131,46 @@ public class SphereBullet : MonoBehaviour
         }
 
         initialized = false;
-        Destroy(gameObject);
+        PoolManager.Instance.Return(this);
         return true;
+    }
+
+    public void OnPoolSpawned()
+    {
+        initialized = false;
+    }
+
+    public void OnPoolDespawned()
+    {
+        initialized = false;
+        ownerTransform = null;
+        RestoreOwnerCollisions();
+
+        if (body != null)
+        {
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+        }
+    }
+
+    private void RestoreOwnerCollisions()
+    {
+        if (bulletCollider == null || ignoredOwnerColliders == null)
+        {
+            return;
+        }
+
+        foreach (Collider ownerCollider in ignoredOwnerColliders)
+        {
+            if (ownerCollider != null)
+            {
+                Physics.IgnoreCollision(
+                    bulletCollider,
+                    ownerCollider,
+                    false);
+            }
+        }
+
+        ignoredOwnerColliders = null;
     }
 }
